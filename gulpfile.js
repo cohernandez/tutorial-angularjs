@@ -3,6 +3,8 @@ var gulp
 connect = require('gulp-connect');
 
 
+var jshint = require('gulp-jshint'), stylish = require('jshint-stylish');
+
 // Servidor web de desarrollo
 gulp.task('server', function() {
 connect.server({
@@ -33,10 +35,20 @@ gulp.src('./app/**/*.html')
 .pipe(connect.reload());
 });
 
+
+// Busca errores en el JS y nos los muestra por pantalla
+gulp.task('jshint', function() { return gulp.src('./app/scripts/*/.js')
+.pipe(jshint('.jshintrc')) .pipe(jshint.reporter('jshint-stylish'))
+.pipe(jshint.reporter('fail')); });
+
+
 // Vigila cambios que se produzcan en el código
 // y lanza las tareas relacionadas
 gulp.task('watch', function() {
 gulp.watch(['./app/**/*.html'], ['html']);
 gulp.watch(['./app/stylesheets/**/*.styl'], ['css']);
+gulp.watch(['./app/scripts/**/*.js'], ['jshint']);
 });
+
+
 gulp.task('default', ['watch','server']);
