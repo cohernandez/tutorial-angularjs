@@ -5,6 +5,9 @@ connect = require('gulp-connect');
 
 var jshint = require('gulp-jshint'), stylish = require('jshint-stylish');
 
+var inject  = require('gulp-inject');
+var wiredep = require('wiredep').stream;
+
 // Servidor web de desarrollo
 gulp.task('server', function() {
 connect.server({
@@ -37,7 +40,7 @@ gulp.src('./app/**/*.html')
 
 
 // Busca errores en el JS y nos los muestra por pantalla
-gulp.task('jshint', function() { return gulp.src('./app/scripts/*/.js')
+gulp.task('jshint', function() { return gulp.src('./app/scripts/**/*.js')
 .pipe(jshint('.jshintrc')) .pipe(jshint.reporter('jshint-stylish'))
 .pipe(jshint.reporter('fail')); });
 
@@ -46,9 +49,32 @@ gulp.task('jshint', function() { return gulp.src('./app/scripts/*/.js')
 // y lanza las tareas relacionadas
 gulp.task('watch', function() {
 gulp.watch(['./app/**/*.html'], ['html']);
-gulp.watch(['./app/stylesheets/**/*.styl'], ['css']);
-gulp.watch(['./app/scripts/**/*.js'], ['jshint']);
+gulp.watch(['./app/stylesheets/**/*.styl'], ['css', 'inject']);
+gulp.watch(['./app/scripts/**/*.js', './Gulpfile.js'], ['jshint', 'inject']);
+gulp.watch(['./bower.json'], ['wiredep']);
 });
 
 
-gulp.task('default', ['watch','server']);
+
+// Busca en las carpetas de estilos y javascript los archivos que hayamos creado
+// para inyectarlos en el index.html
+gulp.task('inject', function() {
+  var sources = gulp.src(['./app/scripts/**/*.js','./app/stylesheets/**/*.css']);
+  return gulp.src('index.html', {cwd: './app'})
+    .pipe(inject(sources, {
+      read: false,
+      ignorePath: '/app'
+    }))
+    .pipe(gulp.dest('./app'));
+});
+// Inyecta las librerias que instalemos vía Bower
+gulp.task('wiredep', function () {
+  gulp.src('./app/index.html')
+    .pipe(wiredep({
+      directory: './app/lib'
+    }))
+    .pipe(gulp.dest('./app'));
+});
+
+
+gulp.task('default', ['watch','inject', 'wiredep','server']);
